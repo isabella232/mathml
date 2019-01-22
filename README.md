@@ -1,7 +1,5 @@
 # mathml
-MathML editors' draft
-
-See https://w3c.github.io/mathml/
+[MathML editors' draft](https://w3c.github.io/mathml/)
 
 Note the build scripts are _not_ fully converted
 to the github layout at this time.
