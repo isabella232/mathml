@@ -1,4 +1,9 @@
 
+branches:
+  only:
+  - master
+  - gh-pages
+
 notifications:
   email:
     recipients:
@@ -14,5 +19,4 @@ cache:
 
 script:
  - ./build/run-restyle
- 
 
