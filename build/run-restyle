@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+# debug travis set -e
 
 cd `dirname $0`
 
@@ -13,11 +13,11 @@ HSTYLE=src/style/html
 PSTYLE=src/style/pdf
 #W3CMATH=../..
 
-RELAXNG=RelaxNG/mathml3
+RELAXNG=RelaxNG/mathml4
 
-if [ ! -f saxon9he.jar ]; then
-    if [ ! -f /tmp/jars/saxon9he.jar ]; then
-	cp /tmp/jars/saxon9he.jar .
+if [ ! -f ../saxon9he.jar ]; then
+    if [ -f /tmp/jars/saxon9he.jar ]; then
+	cp /tmp/jars/saxon9he.jar ..
     else
 	echo install saxon9he.jar eg run build/install-tools
     fi
@@ -29,6 +29,7 @@ SAXON="java -jar saxon9he.jar "
 
 echo validate sources
 rxp -sxV $DRAFT/$SOURCE/mathml-spec.xml
+
 
 # echo "updating schema"
 # (cd $DRAFT; cd $RELAXNG ; pwd; cvs -q update )
@@ -48,16 +49,16 @@ echo clear old versions
 echo "generate schema"
 
 cd $RELAXNG
-for i in mathml3*rnc
+for i in mathml4*rnc
 do
-    cp $i ${i/.rnc/.new}
+    cp $i ${i/.rnc/.old}
 done
 
 cd $DRAFT
 
-$SAXON -o:$RELAXNG/mathml3-content.new src/xml/contm-new.xml src/style/rnc/schema.xsl
+$SAXON -o:$RELAXNG/mathml4-content.rnc src/xml/contm-new.xml src/style/rnc/schema.xsl
 
-$SAXON -o:$RELAXNG/mathml3-presentation.new src/xml/presentation-markup.xml src/style/rnc/schema.xsl
+$SAXON -o:$RELAXNG/mathml4-presentation.rnc src/xml/presentation-markup.xml src/style/rnc/schema.xsl
 
 cd $DRAFT
 
@@ -76,14 +77,14 @@ echo "making  diff-marked HTML version"
 # could set up git diff --ext-diff to use same
 # but seems easier to set up for general use to do it in two stages
 cd $RELAXNG
-for i in mathml3*rnc
+for i in mathml4*rnc
 do
-   diff --ifdef=diff $i ${i/.rnc/.new} > $i-diff
+   diff --ifdef=diff ${i/.rnc/.old} $i > $i-diff
 done
 #diff makes empty file rather than original if there are no diffs so:
-for i in `grep -L ifdef *diff`
+for i in `grep -L ifdef *diff || true`
 do cp ${i/-diff/} $i;done
-cd $DRAFT
+cd $DRAFT 
 
 
 echo "getting rec version of unicode, for op dictionary diffs (cvs based)"
@@ -149,11 +150,15 @@ sed -i -e "s@></input></mtext>@/></mtext>@" mathml.html
 rm html5-restyle.xsl
 mv tmp.dtd mathml.dtd
 
+echo "remove xhtml versions"
+rm Overview.xml appendix*.xml chapter*.xml
+
 # exit
 
 echo ""
 echo PDF
 echo generate TeX files
+export PATH=/tmp/texlive/bin/x86_64-linux:$PATH
 
 cd $DRAFT
 
@@ -196,6 +201,14 @@ export SOURCE_DATE_EPOCH_TEX_PRIMITIVES=1 # old version
 
 # use nested if rather than while to limit looping
 echo generate mathml.pdf
+
+# debugging on travis:
+echo one
+# pdflatex mathml.tex
+echo two
+# pdflatex mathml.tex
+
+
 pdflatex \\batchmode \\input mathml.tex
 if (grep -i rerun mathml.log)
   then
@@ -218,11 +231,11 @@ fi
 
 
 echo grep latex warnings
-grep "^\!" mathml.log
-grep -i warning mathml.log | grep -v bookmarks | grep -v "Font Warning"
-grep -i rerun mathml.log
-grep -i " error" mathml.log
-grep Overfull mathml.log | sed -e "s/(\([0-9]\\.\)/(0\\1/"| sort -n
+grep "^\!" mathml.log || true
+(grep -i warning mathml.log | grep -v bookmarks | grep -v "Font Warning" ) || true
+grep -i rerun mathml.log || true
+grep -i " error" mathml.log || true
+(grep Overfull mathml.log | sed -e "s/(\([0-9]\\.\)/(0\\1/"| sort -n ) || true
 
 
 
@@ -240,6 +253,8 @@ echo running generated images script
 bash images.sh
 cp images.tex build/images.old
 fi
+
+git clean -f
 
 exit
 

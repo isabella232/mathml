@@ -7,6 +7,8 @@ cd `dirname $0`
 BUILD=$PWD
 
 
+echo saxon
+
 if [ ! -d /tmp/jars ]; then
 mkdir /tmp/jars
 fi
@@ -18,11 +20,13 @@ if [ ! -f saxon9he.jar ]; then
     mv Saxon-HE-9.8.0-3.jar saxon9he.jar
 fi
 
+ls /tmp/jars
 
 cd $BUILD
 
 echo texlive
 
+export PATH=/tmp/texlive/bin/x86_64-linux:$PATH
 
 if [ ! -f /tmp/texlive/bin/x86_64-linux/pdflatex ]; then
   # Obtain TeX Live
@@ -31,9 +35,9 @@ if [ ! -f /tmp/texlive/bin/x86_64-linux/pdflatex ]; then
   cd install-tl-20*
 
   # Install a minimal system
-  ./install-tl --profile=texlive.profile
+  ./install-tl --profile=../texlive.profile
 
-tlmgr install collection-fontsrecommended
+tlmgr install collection-fontsrecommended ntgclass
 
 # Keep no backups (not required, simply makes cache bigger)
 tlmgr option -- autobackup 0
